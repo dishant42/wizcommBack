@@ -164,40 +164,6 @@ exports.getUserBookingsById = async (req, res) => {
   }
 };
 
-// Get bookings by user email
-exports.getUserBookingsByEmail = async (req, res) => {
-  const { email } = req.params;
-  const { 
-    status, 
-    future, 
-    limit = 50, 
-    offset = 0 
-  } = req.query;
-
-  try {
-    // Find user by email
-    const user = await prisma.user.findUnique({
-      where: { email: decodeURIComponent(email) },
-      select: { id: true, email: true, name: true }
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        error: 'User not found with this email'
-      });
-    }
-
-    // Use the existing getUserBookingsById logic
-    req.params.userId = user.id;
-    return this.getUserBookingsById(req, res);
-
-  } catch (error) {
-    logger.error('Error fetching user bookings by email:', error);
-    res.status(500).json({
-      error: 'Internal server error'
-    });
-  }
-};
 
 // Get bookings by user email
 exports.getUserBookingsByEmail = async (req, res) => {
