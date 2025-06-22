@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const Prisma = require('@prisma/client');
+
 // const { sendBookingConfirmation } = require('../services/email-service'); // Adjust path as needed
 
 
@@ -39,16 +39,22 @@ class SlotBookingService {
    */
   async createSlotBooking(slotId, userId) {
     const startTime = Date.now();
+    const requestId = `${slotId}-${userId}-${Date.now()}-${Math.random()}`;
     
     try {
       // Track concurrent requests for this slot
       const currentConcurrency = this.concurrentRequests.get(slotId) || 0;
       this.concurrentRequests.set(slotId, currentConcurrency + 1);
-
-      let result;
+      this.logger.info('Starting slot booking attempt', {
+        requestId,
+        slotId,
+        userId,
+        concurrency: currentConcurrency + 1
+      });
+      
 
       // Only use optimistic strategy
-      result = await this.createSlotBookingOptimistic(slotId, userId);
+      const result = await this.createSlotBookingOptimistic(slotId, userId, requestId);
       result.method = 'optimistic';
 
       // Log metrics
@@ -78,14 +84,21 @@ class SlotBookingService {
 
 
 
-  async createSlotBookingOptimistic(slotId, userId) {
+  async createSlotBookingOptimistic(slotId, userId, requestId) {
     
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
+        this.logger.info(`Booking attempt ${attempt}`, {
+          requestId,
+          slotId,
+          userId,
+          attempt
+        });
         const booking = await this.prisma.$transaction(async (tx) => {
           // 1. Get slot with current version and booking count
           const slot = await tx.slot.findUnique({
-            where: { id: slotId },
+            where: { id: slotId,
+            },
             include: {
               event: {
                 select: { id: true, title: true, version: true }
@@ -96,14 +109,27 @@ class SlotBookingService {
               }
             }
           });
-
+          console.log("we are in booking service slot", slot);
           if (!slot) {
             throw new SlotBookingError('Slot not found', 'SLOT_NOT_FOUND');
           }
 
           // 2. Check capacity
-          const confirmedBookings = slot.bookings.filter(b => b.status === 'CONFIRMED');
-          if (confirmedBookings.length >= slot.maxBookings) {
+           const currentBookingCount = await tx.booking.count({
+            where: {
+              slotId: slotId,
+              status: 'CONFIRMED'
+            }
+          });
+          this.logger.info('Capacity check', {
+            requestId,
+            slotId,
+            currentBookingCount,
+            maxBookings: slot.maxBookings,
+            available: slot.maxBookings - currentBookingCount
+          });
+
+          if (currentBookingCount >= slot.maxBookings) {
             throw new SlotBookingError('Slot is fully booked', 'SLOT_FULL');
           }
 
@@ -117,6 +143,19 @@ class SlotBookingService {
           if (existingBooking && existingBooking.status === 'CONFIRMED') {
             throw new SlotBookingError('User already has a booking for this slot', 'DUPLICATE_BOOKING');
           }
+
+
+          // 5. Update slot current bookings and version (optimistic concurrency control)
+          const updatedSlot = await tx.slot.update({
+            where: { 
+              id: slotId,
+              version: slot.version // This will fail if version changed
+            },
+            data: { 
+              currentBookings: { increment: 1 },
+              version: { increment: 1 }
+            }
+          });
 
           // 4. Create booking
           const newBooking = await tx.booking.create({
@@ -134,17 +173,7 @@ class SlotBookingService {
             }
           });
 
-          // 5. Update slot current bookings and version (optimistic concurrency control)
-          const updatedSlot = await tx.slot.update({
-            where: { 
-              id: slotId,
-              version: slot.version // This will fail if version changed
-            },
-            data: { 
-              currentBookings: { increment: 1 },
-              version: { increment: 1 }
-            }
-          });
+          
 
           // 6. Update event version
           await tx.event.update({
