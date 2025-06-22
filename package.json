@@ -1,0 +1,33 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@prisma/client": "^6.10.1",
+    "@supabase/supabase-js": "^2.50.0",
+    "axios": "^1.10.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-validator": "^7.2.1",
+    "firebase-admin": "^13.4.0",
+    "http-status-codes": "^2.3.0",
+    "luxon": "^3.6.1",
+    "nodemailer": "^7.0.3",
+    "nodemon": "^3.1.10",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.10.1"
+  }
+}

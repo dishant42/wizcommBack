@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+
+/*
+
+# After editing schema.prisma:
+npx prisma db push
+npx prisma generate
+
+
+
+
+*/
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  createdBy   String   @default("anonymous")// User name 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  version     Int      @default(0) // Optimistic concurrency control
+  
+  slots       Slot[]
+  bookings    Booking[]
+  
+  @@map("events")
+}
+
+model Slot {
+  id              String   @id @default(uuid())
+  dateTime        DateTime
+  maxBookings     Int
+  currentBookings Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  version         Int      @default(0) // Optimistic concurrency control
+  
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId         String
+  bookings        Booking[]
+  
+  @@map("slots")
+}
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  
+  bookings  Booking[]
+  
+  @@map("users")
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  WAITLISTED
+}
+
+model Booking {
+  id        String        @id @default(uuid())
+  status    BookingStatus @default(CONFIRMED)
+  bookedAt  DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  version   Int           @default(0) // Optimistic concurrency control
+  
+  slot      Slot   @relation(fields: [slotId], references: [id], onDelete: Cascade)
+  slotId    String
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   String
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  
+  @@unique([slotId, userId]) // Prevent duplicate bookings for same slot
+  @@map("bookings")
+}

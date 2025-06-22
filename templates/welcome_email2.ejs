@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Booking Confirmation</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Arial", sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f4f4f4;
+      }
+
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+        font-weight: 300;
+      }
+
+      .header p {
+        font-size: 16px;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 40px 30px;
+      }
+
+      .greeting {
+        font-size: 18px;
+        margin-bottom: 20px;
+        color: #2c3e50;
+      }
+
+      .message {
+        font-size: 16px;
+        margin-bottom: 25px;
+        line-height: 1.7;
+        color: #555;
+      }
+
+      .booking-details {
+        background-color: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 25px;
+        margin: 30px 0;
+        border-radius: 5px;
+      }
+
+      .booking-details h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+        font-size: 20px;
+      }
+
+      .detail-item {
+        display: flex;
+        justify-content: flex-start; /* Align left */
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .detail-item:last-child {
+        border-bottom: none;
+      }
+
+      .detail-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        min-width: 140px; /* 👈 Add this to align values consistently */
+        display: inline-block;
+      }
+
+      .detail-value {
+        font-weight: 500;
+        color: #2c3e50;
+        font-size: 16px;
+        word-break: break-word;
+      }
+      .confirmation-number {
+        background-color: #e8f5e8;
+        border: 1px solid #28a745;
+        padding: 15px;
+        border-radius: 5px;
+        text-align: center;
+        margin: 25px 0;
+      }
+
+      .confirmation-number strong {
+        color: #28a745;
+        font-size: 18px;
+      }
+
+      .cta-section {
+        text-align: center;
+        margin: 35px 0;
+      }
+
+      .cta-button {
+        display: inline-block;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 30px;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: 600;
+        font-size: 16px;
+        transition: transform 0.2s ease;
+      }
+
+      .cta-button:hover {
+        transform: translateY(-2px);
+      }
+
+      .important-info {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 20px;
+        border-radius: 5px;
+        margin: 25px 0;
+      }
+
+      .important-info h4 {
+        color: #856404;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .important-info p {
+        color: #856404;
+        font-size: 14px;
+        margin: 5px 0;
+      }
+
+      .footer {
+        background-color: #2c3e50;
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .footer p {
+        margin: 5px 0;
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      .social-links {
+        margin: 20px 0;
+      }
+
+      .social-links a {
+        color: white;
+        text-decoration: none;
+        margin: 0 10px;
+        font-size: 14px;
+      }
+
+      .timestamp {
+        font-size: 12px;
+        color: #6c757d;
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+        border-top: 1px solid #e9ecef;
+      }
+
+      @media (max-width: 600px) {
+        .email-container {
+          margin: 0;
+          box-shadow: none;
+        }
+
+        .header,
+        .content,
+        .footer {
+          padding: 20px;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .booking-details {
+          padding: 20px;
+        }
+
+        .detail-item {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 5px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header -->
+      <div class="header">
+        <h1>🎉 Booking Confirmed!</h1>
+        <p>Your reservation has been successfully processed</p>
+      </div>
+
+      <!-- Main Content -->
+      <div class="content">
+        <!-- Greeting -->
+        <div class="greeting">Hello <%= data.username %>!</div>
+
+        <!-- Main Message -->
+        <div class="message">
+          Great news! Your booking has been confirmed successfully. We're
+          excited to have you join us for this event.
+        </div>
+
+        <!-- Booking Details -->
+        <div class="booking-details">
+          <h3>📋 Booking Details</h3>
+
+          <div class="detail-item">
+            <span class="detail-label">Event Name</span>
+            <span class="detail-value"><%= data.eventName %></span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Scheduled Time</span>
+            <span class="detail-value"><%= data.slotTime %></span>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-label">Booked By</span>
+            <span class="detail-value"><%= data.username %></span>
+          </div>
+        </div>
+
+        <!-- Second Message -->
+        <div class="message">
+          Please save this email for your records. If you need to make any
+          changes to your booking, please contact our support team as soon as
+          possible.
+        </div>
+
+        <!-- Important Information -->
+        <div class="important-info">
+          <h4>📌 Important Reminders</h4>
+          <p>• Please arrive 15 minutes before your scheduled time</p>
+          <p>• Bring a valid ID for verification</p>
+          <p>• Contact us if you need to reschedule or cancel</p>
+        </div>
+
+        <!-- Additional Message -->
+        <div class="message">
+          Thank you for choosing EventBook. We look forward to seeing you at the
+          event!
+        </div>
+
+        <!-- Timestamp -->
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p><strong>EventBook</strong></p>
+        <p>Your trusted event management partner</p>
+
+        <div class="social-links">
+          <a href="#">Contact Us</a> | <a href="#">Support</a> |
+          <a href="#">Privacy Policy</a>
+        </div>
+
+        <p>© 2025 EventBook. All rights reserved.</p>
+        <p>This is an automated message. Please do not reply to this email.</p>
+      </div>
+    </div>
+  </body>
+</html>
