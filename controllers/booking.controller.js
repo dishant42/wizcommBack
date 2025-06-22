@@ -54,6 +54,150 @@ exports.createBooking = async (req, res) => {
   }
 };
 
+// Get bookings by user ID
+exports.getUserBookingsById = async (req, res) => {
+  const { userId } = req.params;
+  const { 
+    status, 
+    future, 
+    limit = 50, 
+    offset = 0 
+  } = req.query;
+
+  try {
+    // Check if user exists
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found'
+      });
+    }
+
+    // Build where clause
+    const whereClause = {
+      userId: userId
+    };
+
+    // Add status filter if provided
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // Add future filter if provided
+    if (future !== undefined) {
+      const now = new Date();
+      if (future === 'true') {
+        whereClause.slot = {
+          dateTime: { gt: now }
+        };
+      } else {
+        whereClause.slot = {
+          dateTime: { lte: now }
+        };
+      }
+    }
+
+    // Get bookings with related data
+    const bookings = await prisma.booking.findMany({
+      where: whereClause,
+      include: {
+        slot: {
+          select: {
+            id: true,
+            dateTime: true,
+            maxBookings: true,
+            currentBookings: true
+          }
+        },
+        event: {
+          select: {
+            id: true,
+            title: true,
+            description: true
+          }
+        }
+      },
+      orderBy: [
+        { slot: { dateTime: 'asc' } },
+        { bookedAt: 'desc' }
+      ],
+      take: parseInt(limit),
+      skip: parseInt(offset)
+    });
+
+    // Get total count for pagination
+    const totalCount = await prisma.booking.count({
+      where: whereClause
+    });
+
+    // Enhance bookings with additional info
+    const enhancedBookings = bookings.map(booking => ({
+      ...booking,
+      isPastEvent: new Date(booking.slot.dateTime) < new Date(),
+      availableSpots: booking.slot.maxBookings - booking.slot.currentBookings,
+      slotStatus: booking.slot.currentBookings >= booking.slot.maxBookings ? 'FULL' : 'AVAILABLE'
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        user,
+        bookings: enhancedBookings,
+        pagination: {
+          total: totalCount,
+          limit: parseInt(limit),
+          offset: parseInt(offset),
+          hasMore: parseInt(offset) + parseInt(limit) < totalCount
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error fetching user bookings:', error);
+    res.status(500).json({
+      error: 'Internal server error'
+    });
+  }
+};
+
+// Get bookings by user email
+exports.getUserBookingsByEmail = async (req, res) => {
+  const { email } = req.params;
+  const { 
+    status, 
+    future, 
+    limit = 50, 
+    offset = 0 
+  } = req.query;
+
+  try {
+    // Find user by email
+    const user = await prisma.user.findUnique({
+      where: { email: decodeURIComponent(email) },
+      select: { id: true, email: true, name: true }
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: 'User not found with this email'
+      });
+    }
+
+    // Use the existing getUserBookingsById logic
+    req.params.userId = user.id;
+    return this.getUserBookingsById(req, res);
+
+  } catch (error) {
+    logger.error('Error fetching user bookings by email:', error);
+    res.status(500).json({
+      error: 'Internal server error'
+    });
+  }
+};
 
 // Get bookings by user email
 exports.getUserBookingsByEmail = async (req, res) => {
